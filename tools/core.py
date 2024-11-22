@@ -1,4 +1,5 @@
 def compute_curvature(sketch):
+    #TODO
     pass
 
 
