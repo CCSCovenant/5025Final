@@ -1,8 +1,9 @@
+import torch
 import yaml
 import argparse
 import random
-from utils.model import ImageTranslationBranch, NeuralRankingModule
-from utils.base_util import *
+from NerualContours.utils.model import ImageTranslationBranch, NeuralRankingModule
+from NerualContours.utils.base_util import *
 import time
 
 

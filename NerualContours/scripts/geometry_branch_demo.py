@@ -1,5 +1,5 @@
 import os
-from utils.base_util import pr2tensor, show_tensor
+from NerualContours.utils.base_util import pr2tensor, show_tensor
 import cv2
 import argparse
 import numpy as np
