@@ -13,23 +13,27 @@ class ViewTool(BaseTool):
         self.last_mouse_pos = event.pos()
 
     def mouse_move(self, event, canvas_widget):
-        dx = event.x() - self.last_mouse_pos.x()
-        dy = event.y() - self.last_mouse_pos.y()
-
-        # 简单的摄像机旋转操作
         if event.buttons() & Qt.LeftButton:
-            canvas_widget.camera_rot[0] += dx * 0.5
-            canvas_widget.camera_rot[1] += dy * 0.5
-            canvas_widget.update()
+            dx = event.x() - self.last_mouse_pos.x()
+            dy = event.y() - self.last_mouse_pos.y()
 
-        # 右键缩放
-        if event.buttons() & Qt.RightButton:
-            canvas_widget.camera_distance -= dy * 0.01
-            if canvas_widget.camera_distance < 0.1:
-                canvas_widget.camera_distance = 0.1
-            canvas_widget.update()
+            # 简单的摄像机旋转操作
+            if event.buttons() & Qt.LeftButton:
+                canvas_widget.camera_rot[0] += dx * 0.5
+                canvas_widget.camera_rot[1] += dy * 0.5
+                canvas_widget.update()
 
-        self.last_mouse_pos = event.pos()
+            # 右键缩放
+            if event.buttons() & Qt.RightButton:
+                canvas_widget.camera_distance -= dy * 0.01
+                if canvas_widget.camera_distance < 0.1:
+                    canvas_widget.camera_distance = 0.1
+                canvas_widget.update()
+
+            self.last_mouse_pos = event.pos()
+
+    def render_tool_icon(self,render,viewport_size):
+        pass
 
     def mouse_release(self, event, canvas_widget):
         pass

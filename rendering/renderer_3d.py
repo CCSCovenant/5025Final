@@ -18,12 +18,13 @@ class Renderer3D:
         # 构建透视投影
         self.projection_matrix = perspective(45.0, aspect, 0.1, 100.0)
 
-    def render_with_selection(self,
+    def render(self,
                               strokes_3d,
                               camera_rot,
                               camera_dist,
                               viewport_size,
-                              selection_manager):
+                              selection_manager,
+                              activated_tool=None):
         """
         渲染所有笔画，并根据选择状态设置颜色。同时批量维护每个笔画的屏幕坐标。
         """
@@ -49,85 +50,96 @@ class Renderer3D:
 
         # 批量投影所有笔画的 3D 坐标到 2D 屏幕坐标
         # 首先收集所有坐标
-        if len(strokes_3d) == 0:
-            # 没有笔画需要渲染，直接返回
-            return
-        all_coords_3d = np.vstack(
-            [stroke.coords_3d for stroke
-             in
-             strokes_3d])  # (Total_N, 3)
-        num_strokes = len(strokes_3d)
-        stroke_lengths = [
-            len(stroke.coords_3d) for
-            stroke in strokes_3d]
+        if len(strokes_3d) > 0:
+            # 批量投影所有笔画的 3D 坐标到 2D 屏幕坐标
+            all_coords_3d = np.vstack(
+                [stroke.coords_3d for
+                 stroke in
+                 strokes_3d])  # (Total_N, 3)
+            stroke_lengths = [
+                len(stroke.coords_3d)
+                for stroke in
+                strokes_3d]
 
-        # 添加第四维齐次坐标
-        all_coords_homog = np.hstack((
-                                     all_coords_3d,
-                                     np.ones(
-                                         (
-                                         all_coords_3d.shape[
-                                             0],
-                                         1),
-                                         dtype=np.float32)))  # (Total_N, 4)
+            # 添加第四维齐次坐标
+            all_coords_homog = np.hstack(
+                (all_coords_3d, np.ones(
+                    (
+                    all_coords_3d.shape[
+                        0], 1),
+                    dtype=np.float32)))  # (Total_N, 4)
 
-        # 计算 Clip 坐标
-        clip_coords = (
-                    mvp @ all_coords_homog.T).T  # (Total_N, 4)
+            # 计算 Clip 坐标
+            clip_coords = (
+                        mvp @ all_coords_homog.T).T  # (Total_N, 4)
 
-        # 透视除法
-        ndc = clip_coords[:,
-              :3] / clip_coords[:,
-                    3].reshape(-1,
-                               1)  # (Total_N, 3)
+            # 透视除法，忽略 w=0 的情况
+            with np.errstate(
+                    divide='ignore',
+                    invalid='ignore'):
+                ndc = np.where(
+                    clip_coords[:,
+                    3:4] != 0,
+                    clip_coords[:,
+                    :3] / clip_coords[:,
+                          3:4],
+                    0)  # (Total_N, 3)
 
-        # 转换为屏幕坐标
-        x_screen = (ndc[:,
-                    0] * 0.5 + 0.5) * w
-        y_screen = (1.0 - (ndc[:,
-                           1] * 0.5 + 0.5)) * h  # Y轴翻转
-        screen_coords = np.stack(
-            (x_screen, y_screen),
-            axis=-1)  # (Total_N, 2)
+            # 转换为屏幕坐标
+            x_screen = (ndc[:,
+                        0] * 0.5 + 0.5) * w
+            y_screen = (1.0 - (ndc[:,
+                               1] * 0.5 + 0.5)) * h  # Y轴翻转
+            screen_coords = np.stack(
+                (x_screen, y_screen),
+                axis=-1)  # (Total_N, 2)
 
-        # 将屏幕坐标分配回各个笔画
-        start = 0
-        for stroke, length in zip(
-                strokes_3d,
-                stroke_lengths):
-            stroke.screen_coords = screen_coords[
-                                   start:start + length]
-            start += length
+            # 将屏幕坐标分配回各个笔画
+            start = 0
+            for stroke, length in zip(
+                    strokes_3d,
+                    stroke_lengths):
+                if length > 0:
+                    stroke.screen_coords = screen_coords[
+                                           start:start + length]
+                else:
+                    stroke.screen_coords = np.empty(
+                        (0, 2),
+                        dtype=np.float32)
+                start += length
 
-        # 遍历所有笔画，设置颜色并绘制
-        start = 0
-        for stroke, length in zip(
-                strokes_3d,
-                stroke_lengths):
-            # 根据状态设置颜色
-            if selection_manager.is_selected(
-                    stroke):
-                r, g, b = (
-                1.0, 1.0, 0.0)  # 选中：黄色
-            elif selection_manager.is_hovered(
-                    stroke):
-                r, g, b = (
-                0.0, 1.0, 0.0)  # 悬停：绿色
-            else:
-                r, g, b = stroke.color  # 普通：白色或自定义颜色
+            # 遍历所有笔画，设置颜色并绘制
+            for stroke in strokes_3d:
+                # 根据状态设置颜色
+                if stroke.is_selected:
+                    r, g, b = (1.0, 1.0,
+                               0.0)  # 选中：黄色
+                elif stroke.is_hovered:
+                    r, g, b = (0.0, 1.0,
+                               0.0)  # 悬停：绿色
+                else:
+                    r, g, b = stroke.color  # 普通：白色或自定义颜色
 
-            gl.glColor3f(r, g, b)
-            gl.glLoadMatrixf(mvp.T)
+                gl.glColor3f(r, g, b)
+                gl.glLoadMatrixf(mvp.T)
 
-            # 批量绘制
-            gl.glBegin(gl.GL_LINE_STRIP)
-            for p in stroke.coords_3d:
-                gl.glVertex3f(p[0],
-                              p[1],
-                              p[2])
-            gl.glEnd()
+                # 批量绘制
+                if len(stroke.coords_3d) > 0:
+                    gl.glBegin(
+                        gl.GL_LINE_STRIP)
+                    for p in stroke.coords_3d:
+                        gl.glVertex3f(
+                            p[0], p[1],
+                            p[2])
+                    gl.glEnd()
+
+            # 绘制选择圆（如果有）
+        if activated_tool is not None:
+            activated_tool.render_tool_icon(self,viewport_size)
 
 
+    def render_tools_hover_icon(self,tool):
+        pass
     def render_selection_circle(self, cx, cy, radius, viewport_size):
             """
             在屏幕空间直接画一个2D圆环，用于指示选择工具的位置

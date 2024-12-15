@@ -6,6 +6,9 @@ from logic.stroke_manager import StrokeManager
 from rendering.renderer_3d import Renderer3D
 from logic.selection_manager import SelectionManager
 from data.stroke_3d import Stroke3D
+from tools.selection_tool import \
+    SelectionTool
+
 
 class CanvasWidget(QOpenGLWidget):
     def __init__(self, parent=None):
@@ -15,6 +18,8 @@ class CanvasWidget(QOpenGLWidget):
         self.selection_manager = SelectionManager()
         self.renderer = Renderer3D()
 
+        self.setMouseTracking(True)
+
         self.current_tool = None  # BaseTool的子类实例
         self.temp_stroke_3d = None  # 用于绘制中产生的临时笔画
 
@@ -22,8 +27,15 @@ class CanvasWidget(QOpenGLWidget):
         self.camera_rot = [0.0, 0.0]
         self.camera_distance = 3.0
 
+
     def set_tool(self, tool):
         """外部(如MainWindow)可调用此方法切换工具"""
+        if isinstance(self.current_tool,
+                      SelectionTool) and not isinstance(
+                tool, SelectionTool):
+            self.selection_circle = None
+            self.selection_manager.clear_hovered()
+
         self.current_tool = tool
         self.update()
 
@@ -47,14 +59,19 @@ class CanvasWidget(QOpenGLWidget):
         if self.temp_stroke_3d:
             strokes_3d.append(self.temp_stroke_3d)
 
-        self.renderer.render_with_selection(
+
+        self.renderer.render(
             strokes_3d,
             camera_rot=self.camera_rot,
             camera_dist=self.camera_distance,
             viewport_size=(self.width(),
                            self.height()),
-            selection_manager=self.selection_manager
+            selection_manager=self.selection_manager,
+            activated_tool=self.current_tool
         )
+
+
+
 
     # ============== 统一的鼠标事件分发 =================
     def mousePressEvent(self, event):

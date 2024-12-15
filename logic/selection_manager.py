@@ -12,6 +12,8 @@ class SelectionManager:
         self.hovered_strokes = set()
 
     def clear_selection(self):
+        for s in self.selected_strokes:
+            s.is_selected = False
         self.selected_strokes.clear()
 
     def add_to_selection(self, strokes):
@@ -19,6 +21,7 @@ class SelectionManager:
         strokes: iterable of stroke引用或ID
         """
         for s in strokes:
+            s.is_selected = True
             self.selected_strokes.add(s)
 
     def set_selection(self, strokes):
@@ -28,17 +31,17 @@ class SelectionManager:
         self.clear_selection()
         self.add_to_selection(strokes)
 
+    def add_to_hovered(self,strokes):
+        for s in strokes:
+            s.is_hovered = True
+            self.hovered_strokes.add(s)
     def set_hovered(self, strokes):
-        self.hovered_strokes = set(
-            strokes)
-
-    def is_selected(self, stroke):
-        return stroke in self.selected_strokes
-
-    def is_hovered(self, stroke):
-        return stroke in self.hovered_strokes
+        self.clear_hovered()
+        self.add_to_hovered(strokes)
 
     def clear_hovered(self):
+        for s in self.hovered_strokes:
+            s.is_hovered = False
         self.hovered_strokes.clear()
 
     # -------------------------------------------

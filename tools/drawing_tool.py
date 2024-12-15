@@ -43,6 +43,9 @@ class DrawingTool(BaseTool):
             canvas_widget.temp_stroke_3d = self.temp_stroke_3d
             canvas_widget.update()
 
+    def render_tool_icon(self,render,viewport_size):
+        pass
+
     def mouse_release(self, event, canvas_widget):
         if event.button() == Qt.LeftButton and self.is_drawing:
             self.is_drawing = False

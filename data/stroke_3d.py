@@ -2,7 +2,7 @@
 import numpy as np
 
 class Stroke3D:
-    def __init__(self, coords_3d, color=(1,1,1), status='normal'):
+    def __init__(self, coords_3d, color=(1,1,1)):
         """
         coords_3d: shape=(N,3)
         color: (r,g,b)
@@ -10,7 +10,8 @@ class Stroke3D:
         """
         self.coords_3d = coords_3d
         self.color = color
-        self.status = status  # or an enum: NORMAL / HOVERED / SELECTED
+        self.is_hovered = False
+        self.is_selected = False
         self.screen_coords = []  # 新增: 存储屏幕坐标 (N,2)
 
     def get_points(self):
