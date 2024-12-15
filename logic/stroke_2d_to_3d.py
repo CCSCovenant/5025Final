@@ -85,5 +85,4 @@ def convert_2d_to_3d(points_2d=None,
 
     coords_3d = np.array(coords_3d,
                          dtype=np.float32)
-    print("finish process")
     return Stroke3D(coords_3d)
