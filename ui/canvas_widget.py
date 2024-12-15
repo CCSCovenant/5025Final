@@ -11,6 +11,7 @@ from logic.stroke_manager import \
 from rendering.renderer_3d import \
     Renderer3D
 from data.stroke_3d import Stroke3D
+from logic.screen_to_3d_converter import screen_stroke_to_3d  # 你可以把封装函数放这里
 
 
 class CanvasWidget(QOpenGLWidget):
@@ -93,11 +94,33 @@ class CanvasWidget(QOpenGLWidget):
                 self.current_stroke_points.append(
                     event.pos())
                 # 实时更新 temp_stroke_3d
+
                 self.temp_stroke_3d = convert_2d_to_3d(
-                    self.current_stroke_points,
-                    self.width(),
-                    self.height()
+                    points_2d=self.current_stroke_points,
+                    canvas_width=self.width(),
+                    canvas_height=self.height(),
+                    projection_matrix=self.renderer.projection_matrix,
+                    view_matrix=self.renderer.view_matrix,
+                    model_matrix=np.eye(
+                        4,
+                        dtype=np.float32),
+                    
                 )
+                '''
+                self.temp_stroke_3d = screen_stroke_to_3d(
+                    screen_points=self.current_screen_points,
+                    projection_matrix=self.renderer.projection_matrix,
+                    view_matrix=self.renderer.view_matrix,
+                    model_matrix=np.eye(
+                        4,
+                        dtype=np.float32),
+                    viewport_width=self.width(),
+                    viewport_height=self.height(),
+                    z_plane=0.0
+                    # 希望笔画落在z=0平面
+                )
+                '''
+
                 self.update()
         else:
             # === 视图模式：旋转 or 缩放相机 ===

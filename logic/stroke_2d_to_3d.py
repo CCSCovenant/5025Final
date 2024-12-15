@@ -2,18 +2,30 @@ import numpy as np
 from data.stroke_3d import Stroke3D
 
 
-def convert_2d_to_3d(points_2d,
-                     canvas_width,
-                     canvas_height):
+def convert_2d_to_3d(points_2d=None,
+                     canvas_width=None,
+                     canvas_height=None,
+                     projection_matrix=None,      # 4x4 numpy array (float32)
+                     view_matrix=None,            # 4x4 numpy array (float32)
+                     model_matrix=None,           # 4x4 numpy array (float32)
+                     ):
     """
-    将一系列2D像素坐标 [QPoint(x, y), ...] 转换为3D坐标
-    这里的规则可以非常灵活，比如：
-    - z 固定为0 或者根据一些深度规则计算
-    - x, y 归一化到[-1,1]区间
-    """
+     将屏幕空间中的一组2D点 screen_points 转换为3D世界坐标 (z=z_plane)上的笔画.
+     返回 Stroke3D 对象 (里面存储3D坐标).
+
+     参数说明:
+       - points_2d      : [(x1, y1), (x2, y2), ...] 或者 [QPoint, QPoint, ...]
+       - canvas_width     : 视口宽度 (widget.width())
+       - canvas_height    : 视口高度 (widget.height())
+       - projection_matrix  : 渲染时使用的投影矩阵 (4x4)
+       - view_matrix        : 渲染时使用的视图矩阵 (4x4)
+       - model_matrix       : 物体(或世界)的模型变换矩阵 (4x4)，若无特殊变换可传 np.eye(4)
+     """
+
     if not points_2d:
         return None
 
+    print(1)
     coords_3d = []
     for pt in points_2d:
         # 简单做一下归一化，再映射到 [-1,1]
