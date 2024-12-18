@@ -2,13 +2,15 @@
 import numpy as np
 
 class Stroke3D:
-    def __init__(self, coords_3d, color=(1,1,1)):
+    def __init__(self, coords_3d, color=(1,1,1),stroke_id=None):
         """
         coords_3d: shape=(N,3)
         color: (r,g,b)
         status: 'normal', 'hovered', 'selected' 等
         """
         self.coords_3d = coords_3d
+        self.stroke_id = stroke_id
+
         self.color = color
         self.is_hovered = False
         self.is_selected = False
