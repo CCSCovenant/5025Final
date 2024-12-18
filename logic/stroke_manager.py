@@ -1,3 +1,4 @@
+#logic/stroke_manager.py
 class StrokeManager:
     def __init__(self):
         self.strokes_3d = []

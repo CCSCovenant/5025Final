@@ -1,3 +1,5 @@
+#logic/stroke_2d_to_3d.py
+
 import numpy as np
 from data.stroke_3d import Stroke3D
 

@@ -16,6 +16,7 @@ class MainWindow(QMainWindow):
 
         # 中心Widget
         self.canvas_widget = CanvasWidget(self)
+        self.resize(800, 600)
         central_widget = QWidget()
         layout = QVBoxLayout()
         layout.addWidget(self.canvas_widget)
