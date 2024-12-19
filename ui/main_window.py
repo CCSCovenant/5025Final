@@ -1,6 +1,10 @@
 # coding=utf-8
 # ui/main_window.py
-from PyQt5.QtWidgets import QMainWindow, QToolBar, QAction, QSpinBox, QVBoxLayout, QWidget, QFileDialog, QMenu, QMenuBar
+from PyQt5.QtWidgets import QMainWindow, \
+    QToolBar, QAction, QSpinBox, \
+    QVBoxLayout, QWidget, QFileDialog, \
+    QMenu, QMenuBar, QHBoxLayout, \
+    QButtonGroup, QRadioButton
 from .canvas_widget import CanvasWidget
 
 from tools.drawing_tool import DrawingTool
@@ -30,6 +34,53 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.canvas_widget)
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
+
+        # 添加参考模式选择的RadioButton
+        radio_layout = QHBoxLayout()
+        self.radio_group = QButtonGroup(
+            self)
+        self.none_radio = QRadioButton(
+            "No reference")
+        self.one_radio = QRadioButton(
+            "1-point")
+        self.two_radio = QRadioButton(
+            "2-point")
+        self.three_radio = QRadioButton(
+            "3-point")
+
+        self.radio_group.addButton(
+            self.none_radio, 0)
+        self.radio_group.addButton(
+            self.one_radio, 1)
+        self.radio_group.addButton(
+            self.two_radio, 2)
+        self.radio_group.addButton(
+            self.three_radio, 3)
+
+        radio_layout.addWidget(
+            self.none_radio)
+        radio_layout.addWidget(
+            self.one_radio)
+        radio_layout.addWidget(
+            self.two_radio)
+        radio_layout.addWidget(
+            self.three_radio)
+        layout.addLayout(radio_layout)
+
+        self.radio_group.buttonClicked[
+            int].connect(
+            self.on_vp_mode_changed)
+
+        central_widget.setLayout(layout)
+        self.setCentralWidget(
+            central_widget)
+
+        # 根据当前manager模式设置默认选中按钮
+        mode = self.canvas_widget.vanishing_point_manager.get_mode()
+        btn = self.radio_group.button(
+            mode)
+        if btn:
+            btn.setChecked(True)
 
         # Feature Toggles
         self.feature_toggle_manager = FeatureToggleManager()
@@ -147,3 +198,12 @@ class MainWindow(QMainWindow):
 
     def toggle_assist_lines(self, checked):
         self.feature_toggle_manager.set_feature("assist_lines", checked)
+    def on_vp_mode_changed(self, mode):
+        self.canvas_widget.vanishing_point_manager.set_mode(mode)
+        self.canvas_widget.vanishing_point_manager.save_config()
+        self.canvas_widget.update()
+
+    def closeEvent(self, event):
+        # 保存当前设置
+        self.canvas_widget.vanishing_point_manager.save_config()
+        super().closeEvent(event)

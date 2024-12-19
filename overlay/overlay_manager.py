@@ -27,7 +27,7 @@ class OverlayManager:
         for e in self.elements:
             e.render(viewport_size)
 
-    def mouse_press_event(self, event):
+    def mouse_press_event(self, event,canvas_widget):
         """
         Handle mouse press: test from top to bottom, if hit, select that element.
         鼠标按下事件，检测元素命中。
@@ -40,11 +40,12 @@ class OverlayManager:
                 self.elements):
             if e.hit_test(mx, my):
                 e.on_mouse_press(mx, my)
+                canvas_widget.update()
                 return True
         return False
 
     def mouse_move_event(self, event,
-                         last_pos):
+                         last_pos,canvas_widget):
         """
         鼠标移动事件，如果有正在拖拽的元素则移动它。
         同时更新hover状态。
@@ -80,17 +81,19 @@ class OverlayManager:
                     hit_any = True
             if hit_any:
                 consumed = True
-
+        if consumed:
+            canvas_widget.update()
         return consumed
 
     def mouse_release_event(self,
-                            event):
+                            event,canvas_widget):
         mx, my = event.x(), event.y()
         for e in self.elements:
             if getattr(e, 'dragging',
                        False):
                 e.on_mouse_release(mx,
                                    my)
+        canvas_widget.update()
         return False
 
     def get_vanishing_points(self):

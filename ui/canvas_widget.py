@@ -7,6 +7,8 @@ from data.stroke_manager_2d import \
     StrokeManager2D
 from data.stroke_manager_3d import \
     StrokeManager3D
+from logic.vanishing_point_manager import \
+    VanishingPointManager
 from rendering.renderer_3d import \
     Renderer3D
 from logic.selection_manager import \
@@ -44,12 +46,12 @@ class CanvasWidget(QOpenGLWidget):
         self.camera_rot = [0.0, 0.0]
         self.camera_distance = 3.0
 
-        # Overlay Manager
+        # 创建VanishingPointManager
         self.overlay_manager = OverlayManager()
-        # 添加一个默认的消失点
-        self.overlay_manager.add_element(
-            VanishingPointElement(200,
-                                  200))
+
+        self.vanishing_point_manager = VanishingPointManager()
+        self.vanishing_point_manager.set_overlay_manager(
+            self.overlay_manager)
 
         self.last_mouse_pos = QPoint()
 
@@ -97,7 +99,7 @@ class CanvasWidget(QOpenGLWidget):
     def mousePressEvent(self, event):
         # First let overlay try to handle
         if self.overlay_manager.mouse_press_event(
-                event):
+                event,self):
             return
         # If not handled by overlay, pass to tool
         if self.current_tool:
@@ -109,7 +111,7 @@ class CanvasWidget(QOpenGLWidget):
 
     def mouseMoveEvent(self, event):
         consumed = self.overlay_manager.mouse_move_event(
-            event, self.last_mouse_pos)
+            event, self.last_mouse_pos,self)
         if not consumed:
             if self.current_tool:
                 self.current_tool.mouse_move(
@@ -121,7 +123,7 @@ class CanvasWidget(QOpenGLWidget):
 
     def mouseReleaseEvent(self, event):
         self.overlay_manager.mouse_release_event(
-            event)
+            event,self)
         if self.current_tool:
             self.current_tool.mouse_release(
                 event, self)
