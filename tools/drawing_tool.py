@@ -16,11 +16,13 @@ class DrawingTool(BaseTool):
     在用户释放鼠标时，对当前笔划进行预处理（防抖、辅助线对齐）然后再进行2D->3D转换。
     """
 
-    def __init__(self, stroke_manager_2d, stroke_manager_3d, stroke_processor):
+    def __init__(self, stroke_manager_2d, stroke_manager_3d, stroke_processor,feature_toggle_manager):
         super().__init__()
         self.stroke_manager_2d = stroke_manager_2d
         self.stroke_manager_3d = stroke_manager_3d
         self.stroke_processor = stroke_processor
+        self.feature_toggle_manager = feature_toggle_manager
+
 
         self.is_drawing = False
         self.current_points_2d = []
@@ -68,14 +70,18 @@ class DrawingTool(BaseTool):
                                                                                     dtype=np.float32)
                                                                                 )
             # 转换为3D笔画
-            print(processed_final_stroke_3d)
             self.stroke_manager_2d.add_stroke(self.temp_stroke_2d)
-            if processed_final_stroke_3d:
-                processed_final_stroke_3d.color = (1.0, 1.0, 1.0)
-                self.stroke_manager_3d.add_stroke(processed_final_stroke_3d)
 
-            if False:
+
+            if self.feature_toggle_manager.is_enabled("adv_sbm"):
                 canvas_widget.viewable2d_stroke.append(processed_temp_stroke_2d)
+            else:
+                if processed_final_stroke_3d:
+                    processed_final_stroke_3d.color = (
+                    1.0, 1.0, 1.0)
+                    self.stroke_manager_3d.add_stroke(
+                        processed_final_stroke_3d)
+                canvas_widget.viewable2d_stroke = []
 
             self.temp_stroke_2d = None
             self.current_points_2d = []

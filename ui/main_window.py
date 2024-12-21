@@ -17,7 +17,7 @@ from tools.selection_tool import SelectionTool
 from tools.view_tool import ViewTool
 from logic.selection_manager import SelectionManager
 
-# 新增import
+import numpy as np
 from logic.feature_toggle_manager import FeatureToggleManager
 from logic.stroke_processor import StrokeProcessor
 
@@ -119,7 +119,8 @@ class MainWindow(QMainWindow):
         self.draw_tool = DrawingTool(
             self.canvas_widget.stroke_manager_2d,
             self.canvas_widget.stroke_manager_3d,
-            self.stroke_processor
+            self.stroke_processor,
+            self.feature_toggle_manager
         )
 
         self.select_action = QAction("Selection Tool", self, checkable=True)
@@ -129,6 +130,16 @@ class MainWindow(QMainWindow):
         self.view_action = QAction("View Tool", self, checkable=True)
         self.toolbar.addAction(self.view_action)
         self.view_tool = ViewTool()
+
+        self.adv_sbm_action = QAction(
+            "Enable ADV_SBM", self,
+            checkable=True)
+        self.adv_sbm_action.setChecked(
+            False)
+        self.adv_sbm_action.triggered.connect(
+            self.on_adv_sbm_toggled)
+        self.toolbar.addAction(
+            self.adv_sbm_action)
 
         self.radius_spin = QSpinBox()
         self.radius_spin.setRange(1, 300)
@@ -223,6 +234,61 @@ class MainWindow(QMainWindow):
         self.canvas_widget.vanishing_point_manager.set_mode(mode)
         self.canvas_widget.vanishing_point_manager.save_config()
         self.canvas_widget.update()
+
+    def on_adv_sbm_toggled(self,
+                           checked):
+        # set feature
+        self.feature_toggle_manager.set_feature(
+            "adv_sbm", checked)
+        if checked:
+            # disable selection tool, view tool
+
+            self.draw_action.setChecked(
+                True)
+            self.select_action.setChecked(
+                False)
+            self.view_action.setChecked(
+                False)
+
+            self.canvas_widget.set_tool(self.draw_tool)
+
+            self.select_action.setEnabled(
+                False)
+            self.view_action.setEnabled(
+                False)
+
+        else:
+            # enable them
+            self.select_action.setEnabled(
+                True)
+            self.view_action.setEnabled(
+                True)
+            # 把 stroke_manager_2d 里的数据全部 -> 3D
+            self.batch_convert_2d_to_3d()
+
+        self.canvas_widget.update()
+
+    def batch_convert_2d_to_3d(self):
+        """
+        在关闭 adv_sbm 时, 调用外部工具(缺失)或者 stroke_processor 的 convert_2d_to_3d,
+        把 stroke_manager_2d 里的所有 stroke2d 转成 stroke3d.
+        """
+        strokes_2d = self.canvas_widget.viewable2d_stroke
+        # 用 stroke_processor
+        for s2d in strokes_2d:
+            s3d = self.stroke_processor.process_2dto3d_stroke(
+                s2d,
+                canvas_width=self.canvas_widget.width(),
+                canvas_height=self.canvas_widget.height(),
+                projection_matrix=self.canvas_widget.renderer.projection_matrix,
+                view_matrix=self.canvas_widget.renderer.view_matrix,
+                model_matrix=np.eye(
+                    4,
+                    dtype=np.float32)
+                )
+            if s3d:
+                self.canvas_widget.stroke_manager_3d.add_stroke(
+                    s3d)
 
     def closeEvent(self, event):
         # 保存当前设置

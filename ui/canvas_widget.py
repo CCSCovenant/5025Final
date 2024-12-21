@@ -70,9 +70,7 @@ class CanvasWidget(QOpenGLWidget):
     def get_all_strokes_for_selection(
             self):
         strokes = self.stroke_manager_3d.get_all_strokes()
-        if self.temp_stroke_3d:
-            strokes = list(strokes) + [
-                self.temp_stroke_3d]
+
         return strokes
 
     def initializeGL(self):
@@ -91,8 +89,6 @@ class CanvasWidget(QOpenGLWidget):
                                     self.height()))
 
     def render2d_strokes(self):
-        gl.glClear(
-            gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         # 这里可以用一个 2D Renderer, 或者简单地在正交投影下画 line strips:
         strokes_2d = self.viewable2d_stroke.copy()
         if self.temp_stroke_2d:
@@ -100,9 +96,11 @@ class CanvasWidget(QOpenGLWidget):
         w, h = self.width(), self.height()
         gl.glMatrixMode(
             gl.GL_PROJECTION)
+        gl.glPushMatrix()
         gl.glLoadIdentity()
         gl.glOrtho(0, w, h, 0, -1, 1)
         gl.glMatrixMode(gl.GL_MODELVIEW)
+        gl.glPushMatrix()
         gl.glLoadIdentity()
 
         for s2d in strokes_2d:
@@ -115,10 +113,16 @@ class CanvasWidget(QOpenGLWidget):
                 gl.glVertex2f(x, y)
             gl.glEnd()
 
+        gl.glPopMatrix()
+        gl.glMatrixMode(
+            gl.GL_PROJECTION)
+        gl.glPopMatrix()
+        gl.glMatrixMode(gl.GL_MODELVIEW)
+
     def render3d_strokes(self):
         strokes_3d = list(
             self.stroke_manager_3d.get_all_strokes())
-
+        print(len(strokes_3d))
         self.renderer.render(
             strokes_3d,
             camera_rot=self.camera_rot,

@@ -34,30 +34,30 @@ class GroundPlane3D:
         gl.glPushMatrix()
         gl.glLoadMatrixf(mvp.T)
 
-        # 在Z=0平面上画一个棋盘，size大小 [-size, size] in X, [-size, size] in Y
+        # 在Y=0平面上画一个棋盘，size大小 [-size, size] in X, [-size, size] in Z
         # divisions表示在X/Y方向上切分多少格
         step = (2.0*self.size) / self.divisions
 
         # 逐格绘制
-        y_start = -self.size
-        for iy in range(self.divisions):
+        z_start = -self.size
+        for iz in range(self.divisions):
             x_start = -self.size
             for ix in range(self.divisions):
                 # 计算小方格 corners
                 x0 = x_start + ix*step
-                y0 = y_start + iy*step
+                z0 = z_start + iz*step
                 x1 = x0 + step
-                y1 = y0 + step
+                z1 = z0 + step
                 # 交错颜色
-                if (ix + iy) % 2 == 0:
+                if (ix + iz) % 2 == 0:
                     gl.glColor3f(*self.color1)
                 else:
                     gl.glColor3f(*self.color2)
                 gl.glBegin(gl.GL_QUADS)
-                gl.glVertex3f(x0, y0, 0.0)
-                gl.glVertex3f(x1, y0, 0.0)
-                gl.glVertex3f(x1, y1, 0.0)
-                gl.glVertex3f(x0, y1, 0.0)
+                gl.glVertex3f(x0, 0.0, z0)
+                gl.glVertex3f(x1, 0.0, z1)
+                gl.glVertex3f(x1, 0.0, z0)
+                gl.glVertex3f(x0, 0.0, z1)
                 gl.glEnd()
 
         gl.glPopMatrix()
