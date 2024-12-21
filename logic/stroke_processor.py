@@ -27,6 +27,8 @@ class StrokeProcessor:
         self.pipelineList_2d_to_3d = []
         self.pipelineList_3d = []
 
+
+
         # modifier_pool: key=modifier_id, val=BaseModifier子类实例
         self.modifier_pool = {}
 
@@ -60,11 +62,7 @@ class StrokeProcessor:
 
     def process_2dto3d_stroke(self,
                               stroke2d,
-                              canvas_width,
-                              canvas_height,
-                              projection_matrix,
-                              view_matrix,
-                              model_matrix):
+                              canvas_widget):
         """
         依照 pipelineList 的顺序，查找2d->3d类型的mod并执行。
         这里的做法是一旦找到第一个 2d->3d 的mod并执行，得到的 Stroke3D 就进入后续 3D pipeline (process_3d_stroke)？
@@ -84,11 +82,7 @@ class StrokeProcessor:
             # 调用 apply_2dto3d
             possible_3d = mod.apply_2dto3d(
                 stroke2d,
-                canvas_width,
-                canvas_height,
-                projection_matrix,
-                view_matrix,
-                model_matrix
+                canvas_widget
             )
             if possible_3d is not None:
                 stroke3d = possible_3d

@@ -4,12 +4,14 @@ from PyQt5.QtWidgets import QMainWindow, \
     QToolBar, QAction, QSpinBox, \
     QVBoxLayout, QWidget, QFileDialog, \
     QMenu, QMenuBar, QHBoxLayout, \
-    QButtonGroup, QRadioButton
+    QButtonGroup, QRadioButton,QProgressBar
 
 from logic.Modifier.axis_2dto3d_modifier import \
     Axis2Dto3DModifier
 from logic.Modifier.smoothing_2d_modifier import \
     Smoothing2DModifier
+from logic.pysbm_worker import \
+    pySBMWorker
 from .canvas_widget import CanvasWidget
 
 from tools.drawing_tool import DrawingTool
@@ -111,6 +113,9 @@ class MainWindow(QMainWindow):
 
         # Tools
         self.toolbar = self.addToolBar("Tools")
+
+        layout.addWidget(self.toolbar)
+
         self.draw_action = QAction("Drawing Tool", self, checkable=True)
         self.draw_action.setChecked(True)
         self.toolbar.addAction(self.draw_action)
@@ -130,7 +135,7 @@ class MainWindow(QMainWindow):
         self.view_action = QAction("View Tool", self, checkable=True)
         self.toolbar.addAction(self.view_action)
         self.view_tool = ViewTool()
-
+        '''
         self.adv_sbm_action = QAction(
             "Enable ADV_SBM", self,
             checkable=True)
@@ -140,7 +145,7 @@ class MainWindow(QMainWindow):
             self.on_adv_sbm_toggled)
         self.toolbar.addAction(
             self.adv_sbm_action)
-
+        '''
         self.radius_spin = QSpinBox()
         self.radius_spin.setRange(1, 300)
         self.radius_spin.setValue(50)
@@ -167,21 +172,37 @@ class MainWindow(QMainWindow):
 
         self.canvas_widget.set_tool(self.draw_tool)
 
-        # 菜单增加feature toggles选项
-        menu_bar = self.menuBar() if self.menuBar() else QMenuBar(self)
-        self.setMenuBar(menu_bar)
-        feature_menu = menu_bar.addMenu("Features")
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0,
+                                   100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(
+            False)  # 初始隐藏
 
+        layout.addWidget(
+            self.progress_bar)
+
+        # 菜单增加feature toggles选项
+        self.toolbar2 = self.addToolBar(
+            "drawing")
+
+        layout.addWidget(self.toolbar2)
         self.debounce_action = QAction("Enable Debounce", self, checkable=True)
         self.debounce_action.setChecked(False)
         self.debounce_action.triggered.connect(self.toggle_debounce)
 
         self.assist_action = QAction("Enable Assist Lines", self, checkable=True)
-        self.assist_action.setChecked(False)
+        self.assist_action.setChecked(True)
         self.assist_action.triggered.connect(self.toggle_assist_lines)
 
-        feature_menu.addAction(self.debounce_action)
-        feature_menu.addAction(self.assist_action)
+        self.toolbar2.addAction(
+            self.debounce_action)
+        self.toolbar2.addAction(
+            self.assist_action)
+
+
+        self.worker = None  # 用于保存线程对象
+
 
     def on_tool_changed(self):
         sender = self.sender()
@@ -264,7 +285,7 @@ class MainWindow(QMainWindow):
             self.view_action.setEnabled(
                 True)
             # 把 stroke_manager_2d 里的数据全部 -> 3D
-            self.batch_convert_2d_to_3d()
+            self.on_start_modeling()
 
         self.canvas_widget.update()
 
@@ -274,6 +295,7 @@ class MainWindow(QMainWindow):
         把 stroke_manager_2d 里的所有 stroke2d 转成 stroke3d.
         """
         strokes_2d = self.canvas_widget.viewable2d_stroke
+        s3ds = []
         # 用 stroke_processor
         for s2d in strokes_2d:
             s3d = self.stroke_processor.process_2dto3d_stroke(
@@ -289,7 +311,72 @@ class MainWindow(QMainWindow):
             if s3d:
                 self.canvas_widget.stroke_manager_3d.add_stroke(
                     s3d)
+    def on_start_modeling(self,):
+        if self.worker is not None and self.worker.isRunning():
+            return
+        self.progress_bar.setVisible(
+            True)
+        self.progress_bar.setValue(0)
+        self.disable_gui()
+        self.worker = pySBMWorker(
+            strokes = self.canvas_widget.viewable2d_stroke,
+            canvas_width = self.canvas_widget.width(),
+            canvas_height = self.canvas_widget.height(),
+            projection_matrix = self.canvas_widget.renderer.projection_matrix,
+            view_matrix = self.canvas_widget.renderer.view_matrix,
+            model_matrix=np.eye(
+                4,
+                dtype=np.float32),
+            stroke_processor = self.stroke_processor
+        )
 
+        self.worker.progress_changed.connect(
+            self.on_progress_changed)
+        self.worker.finished.connect(
+            self.on_modeling_finished)
+        self.worker.start()
+
+    def on_progress_changed(self,
+                            value):
+        """
+        接收工作线程发来的进度值(0~100)，更新进度条
+        """
+        self.progress_bar.setValue(
+            int(value))
+    def on_modeling_finished(self,
+                             result):
+        """
+        当工作线程完成后，会带着结果调用这个槽函数
+        """
+        self.enable_gui()
+        self.progress_bar.setVisible(
+            False)  # 隐藏进度条
+
+        if result is None:
+            print("modeling is canceled or something goes wrong")
+        else:
+            print("finish modeling")
+            for s3d in result:
+                self.canvas_widget.stroke_manager_3d.add_stroke(s3d)
+                print("current lens"+str(len(self.canvas_widget.stroke_manager_3d.get_all_strokes())))
+                self.canvas_widget.viewable2d_stroke = []
+                self.canvas_widget.update()
+            # 这里可以把 result 存到 stroke_manager_3d 或做其他处理
+
+        # 线程结束后，可以把 worker 置为 None
+        self.worker = None
+
+    def disable_gui(self):
+        """
+        禁用整个GUI，阻止用户输入（鼠标、键盘等）
+        """
+        self.setEnabled(False)
+
+    def enable_gui(self):
+        """
+        恢复GUI可交互
+        """
+        self.setEnabled(True)
     def closeEvent(self, event):
         # 保存当前设置
         self.canvas_widget.vanishing_point_manager.save_config()

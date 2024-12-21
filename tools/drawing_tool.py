@@ -60,15 +60,7 @@ class DrawingTool(BaseTool):
             self.is_drawing = False
             # 在最终提交前，对2D点列进行预处理
             processed_temp_stroke_2d = self.stroke_processor.process_2d_stroke(self.temp_stroke_2d)
-            processed_final_stroke_3d = self.stroke_processor.process_2dto3d_stroke(processed_temp_stroke_2d,
-                                                                                canvas_width=canvas_widget.width(),
-                                                                                canvas_height=canvas_widget.height(),
-                                                                                projection_matrix=canvas_widget.renderer.projection_matrix,
-                                                                                view_matrix=canvas_widget.renderer.view_matrix,
-                                                                                model_matrix=np.eye(
-                                                                                    4,
-                                                                                    dtype=np.float32)
-                                                                                )
+            processed_final_stroke_3d = self.stroke_processor.process_2dto3d_stroke(processed_temp_stroke_2d,canvas_widget)
             # 转换为3D笔画
             self.stroke_manager_2d.add_stroke(self.temp_stroke_2d)
 

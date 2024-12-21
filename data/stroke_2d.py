@@ -8,6 +8,8 @@ class Stroke2D:
         self.stroke_id = stroke_id
         self.points_2d = points_2d  # 2D坐标列表
 
+        self.meta = {}
+
         # 如果想记录绘制时的相机信息，也可加在这里
         self.camera_rot = (0.0, 0.0)
         self.camera_dist = 3.0

@@ -2,8 +2,16 @@
 # logic/pysbm_worker.py
 
 import time
+
+import pysbm
 from PyQt5.QtCore import QThread, \
     pyqtSignal
+import numpy as np
+import pickle
+
+from data.sketch_builder import \
+    build_sketch, extract_fixed_strokes
+from data.stroke_3d import Stroke3D
 
 
 class pySBMWorker(QThread):
@@ -22,49 +30,59 @@ class pySBMWorker(QThread):
         object)  # 任务完成信号，附带结果
 
     def __init__(self, strokes,
+                 canvas_width,
+                 canvas_height,
+                 projection_matrix,
+                 view_matrix,
+                 model_matrix,
+                 stroke_processor,
                  parent=None):
         super().__init__(parent)
         self.strokes = strokes  # 要处理的笔画
         self._is_cancelled = False  # 如果想支持取消，可以加一个标志
+        self.canvas_width = canvas_width
+        self.canvas_height =canvas_height
+        self.projection_matrix = projection_matrix
+        self.view_matrix = view_matrix
+        self.model_matrix =  model_matrix
+        self.stroke_processor = stroke_processor
 
     def cancel(self):
         """让外部可以请求取消"""
         self._is_cancelled = True
 
     def run(self):
-        """
-        在这里执行耗时过程。例如调用外部建模工具。
-        模拟: 对 self.strokes 做循环处理，每处理一个stroke耗时1秒，并发送进度。
-        """
-        total = len(self.strokes)
-        if total == 0:
-            self.finished.emit(None)
-            return
 
-        # 假设要收集一个结果(如3D模型), 这里只是简化
+
         results = []
+        sketch = build_sketch(self.strokes,self.canvas_width,self.canvas_height)
+        pysbm.sketching.sketch_clean(
+            sketch)
+        cam = pysbm.lifting.init_camera(
+            sketch)
+        pysbm.sketching.preprocessing(
+            sketch, cam)
+        symm_candidates, corr_scores = pysbm.lifting.compute_symmetry_candidates(
+            sketch, cam)
+        self.progress_changed.emit(
+            0.4)
+        batches = pysbm.lifting.compute_batches(
+            sketch, symm_candidates)
+        self.progress_changed.emit(
+            0.5)
+        batches_result, batches_result_1 = pysbm.lifting.optimize_symmetry_sketch_pipeline(
+            sketch, cam,
+            symm_candidates, batches,
+            corr_scores)
 
-        for i, stroke in enumerate(
-                self.strokes):
-            if self._is_cancelled:
-                # 被取消了，提前结束
-                self.finished.emit(None)
-                return
-
-            # 在这里执行真正的外部工具操作，如:
-            #   subprocess.run(["external_tool", ...])
-            #   或者  time-consuming function call
-            time.sleep(1)  # 模拟耗时
-
-            # 生成一点假数据
-            result_item = f"model_of_stroke_{i}"
-            results.append(result_item)
-
-            # 发送进度
-            progress_percentage = (
-                                              i + 1) * 100.0 / total
-            self.progress_changed.emit(
-                progress_percentage)
+        file = "../tmp2/batches_result.pkl"
+        try:
+            with open(file,
+                      'wb') as file:
+                pickle.dump(batches_result_1, file)
+                print("saved")
+        except Exception as e:
+            pass
 
         # 处理完成
         # 把最终的模型或结果返回给主线程
