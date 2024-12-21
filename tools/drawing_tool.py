@@ -4,6 +4,8 @@ from PyQt5.QtCore import Qt
 import numpy as np
 import uuid
 
+from logic.stroke_processor import \
+    StrokeProcessor
 from .base_tool import BaseTool
 from data.stroke_2d import Stroke2D
 from logic.stroke_2d_to_3d import convert_2d_stroke_to_3d
@@ -14,15 +16,14 @@ class DrawingTool(BaseTool):
     在用户释放鼠标时，对当前笔划进行预处理（防抖、辅助线对齐）然后再进行2D->3D转换。
     """
 
-    def __init__(self, stroke_manager_2d, stroke_manager_3d, stroke_preprocessor):
+    def __init__(self, stroke_manager_2d, stroke_manager_3d, stroke_processor):
         super().__init__()
         self.stroke_manager_2d = stroke_manager_2d
         self.stroke_manager_3d = stroke_manager_3d
-        self.stroke_preprocessor = stroke_preprocessor
+        self.stroke_processor = stroke_processor
 
         self.is_drawing = False
         self.current_points_2d = []
-        self.temp_stroke_3d = None
         self.current_stroke_id = None
         self.temp_stroke_2d = None
 
@@ -44,45 +45,41 @@ class DrawingTool(BaseTool):
             self.current_points_2d.append((event.x(), event.y()))
             self.temp_stroke_2d.points_2d = self.current_points_2d
 
+            processed_temp_stroke_2d = self.stroke_processor.process_2d_stroke(self.temp_stroke_2d)
             # 实时转换可省去预处理（实时显示原始轨迹），预处理只在最终确定时进行
             # 这里用原始点直接显示临时3D曲线(非必要)
-            stroke_3d = convert_2d_stroke_to_3d(
-                stroke_2d=self.temp_stroke_2d,
-                canvas_width=canvas_widget.width(),
-                canvas_height=canvas_widget.height(),
-                projection_matrix=canvas_widget.renderer.projection_matrix,
-                view_matrix=canvas_widget.renderer.view_matrix
-            )
-            if stroke_3d:
-                stroke_3d.color = (1.0, 1.0, 1.0)
-                self.temp_stroke_3d = stroke_3d
-                canvas_widget.temp_stroke_3d = self.temp_stroke_3d
+
+            if processed_temp_stroke_2d:
+                canvas_widget.temp_stroke_2d = processed_temp_stroke_2d
             canvas_widget.update()
 
     def mouse_release(self, event, canvas_widget):
         if event.button() == Qt.LeftButton and self.is_drawing:
             self.is_drawing = False
             # 在最终提交前，对2D点列进行预处理
-            processed_points = self.stroke_preprocessor.process(self.current_points_2d)
-            self.temp_stroke_2d.points_2d = processed_points
-
+            processed_temp_stroke_2d = self.stroke_processor.process_2d_stroke(self.temp_stroke_2d)
+            processed_final_stroke_3d = self.stroke_processor.process_2dto3d_stroke(processed_temp_stroke_2d,
+                                                                                canvas_width=canvas_widget.width(),
+                                                                                canvas_height=canvas_widget.height(),
+                                                                                projection_matrix=canvas_widget.renderer.projection_matrix,
+                                                                                view_matrix=canvas_widget.renderer.view_matrix,
+                                                                                model_matrix=np.eye(
+                                                                                    4,
+                                                                                    dtype=np.float32)
+                                                                                )
             # 转换为3D笔画
-            final_stroke_3d = convert_2d_stroke_to_3d(
-                stroke_2d=self.temp_stroke_2d,
-                canvas_width=canvas_widget.width(),
-                canvas_height=canvas_widget.height(),
-                projection_matrix=canvas_widget.renderer.projection_matrix,
-                view_matrix=canvas_widget.renderer.view_matrix
-            )
-            if final_stroke_3d:
-                final_stroke_3d.color = (1.0, 1.0, 1.0)
-                self.stroke_manager_2d.add_stroke(self.temp_stroke_2d)
-                self.stroke_manager_3d.add_stroke(final_stroke_3d)
+            print(processed_final_stroke_3d)
+            self.stroke_manager_2d.add_stroke(self.temp_stroke_2d)
+            if processed_final_stroke_3d:
+                processed_final_stroke_3d.color = (1.0, 1.0, 1.0)
+                self.stroke_manager_3d.add_stroke(processed_final_stroke_3d)
 
-            self.temp_stroke_3d = None
+            if False:
+                canvas_widget.viewable2d_stroke.append(processed_temp_stroke_2d)
+
             self.temp_stroke_2d = None
             self.current_points_2d = []
-            canvas_widget.temp_stroke_3d = None
+            canvas_widget.temp_stroke_2d = None
             canvas_widget.update()
 
 

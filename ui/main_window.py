@@ -5,6 +5,11 @@ from PyQt5.QtWidgets import QMainWindow, \
     QVBoxLayout, QWidget, QFileDialog, \
     QMenu, QMenuBar, QHBoxLayout, \
     QButtonGroup, QRadioButton
+
+from logic.Modifier.axis_2dto3d_modifier import \
+    Axis2Dto3DModifier
+from logic.Modifier.smoothing_2d_modifier import \
+    Smoothing2DModifier
 from .canvas_widget import CanvasWidget
 
 from tools.drawing_tool import DrawingTool
@@ -14,7 +19,7 @@ from logic.selection_manager import SelectionManager
 
 # 新增import
 from logic.feature_toggle_manager import FeatureToggleManager
-from logic.stroke_preprocessor import StrokePreprocessor
+from logic.stroke_processor import StrokeProcessor
 
 class MainWindow(QMainWindow):
     """
@@ -86,7 +91,23 @@ class MainWindow(QMainWindow):
         self.feature_toggle_manager = FeatureToggleManager()
 
         # Stroke Preprocessor
-        self.stroke_preprocessor = StrokePreprocessor(self.feature_toggle_manager, self.canvas_widget.overlay_manager)
+        self.stroke_processor = StrokeProcessor(self.feature_toggle_manager)
+
+        m_smooth2d = Smoothing2DModifier()
+        m_axis_2d_to_3d = Axis2Dto3DModifier()
+
+        self.stroke_processor.register_modifier(m_smooth2d)
+        self.stroke_processor.register_modifier(m_axis_2d_to_3d)
+
+        self.stroke_processor.pipelineList_2d = [
+            "smooth_2d"
+        ]
+        self.stroke_processor.pipelineList_2d_to_3d =[
+            "axis_2d_to_3d"
+        ]
+
+
+
 
         # Tools
         self.toolbar = self.addToolBar("Tools")
@@ -94,11 +115,11 @@ class MainWindow(QMainWindow):
         self.draw_action.setChecked(True)
         self.toolbar.addAction(self.draw_action)
 
-        # 创建DrawingTool时传入preprocessor
+        # 创建DrawingTool时传入processor
         self.draw_tool = DrawingTool(
             self.canvas_widget.stroke_manager_2d,
             self.canvas_widget.stroke_manager_3d,
-            self.stroke_preprocessor
+            self.stroke_processor
         )
 
         self.select_action = QAction("Selection Tool", self, checkable=True)

@@ -17,7 +17,9 @@ class FeatureToggleManager:
         # 内部使用字典存储特性名称和布尔值
         self.features = {
             "debounce": False,  # 防抖开关
-            "assist_lines": False
+            "assist_lines": False,
+            "adv_sbm": False,
+            "always":True
             # 辅助线/对齐开关
         }
 
