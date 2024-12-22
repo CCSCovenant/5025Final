@@ -48,6 +48,8 @@ class SelectionTool(BaseTool):
     def mouse_release(self, event, canvas_widget):
         pass  # 点击时已经处理完选择逻辑
 
+    def wheelEvent(self, event,canvas_widget):
+        pass
     def render_tool_icon(self, renderer,
                viewport_size):
         """

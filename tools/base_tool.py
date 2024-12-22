@@ -19,5 +19,7 @@ class BaseTool:
     def mouse_release(self, event, canvas_widget):
         pass
 
+    def wheelEvent(self, event,canvas_widget):
+        pass
     def render_tool_icon(self,render,viewport_size):
         pass

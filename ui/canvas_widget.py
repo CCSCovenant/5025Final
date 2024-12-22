@@ -56,8 +56,9 @@ class CanvasWidget(QOpenGLWidget):
 
 
         # Camera params
+        self.look_at = [0,0,0]
         self.camera_rot = [45, 15]
-        self.camera_distance = 3.0
+        self.camera_distance = 10.0
 
         # 创建VanishingPointManager
         self.overlay_manager = OverlayManager()
@@ -138,7 +139,7 @@ class CanvasWidget(QOpenGLWidget):
             camera_dist=self.camera_distance,
             viewport_size=(self.width(),
                            self.height()),
-            ground_plane=self.groundPlane,
+            lookat=self.look_at,
             activated_tool=self.current_tool
         )
     # Event handling
@@ -177,6 +178,14 @@ class CanvasWidget(QOpenGLWidget):
             super().mouseReleaseEvent(
                 event)
 
+    def wheelEvent(self, event):
+        if self.current_tool:
+            self.current_tool.wheelEvent(
+                event, self)
+        else:
+            super().mouseReleaseEvent(
+                event)
+        pass
     def undo_stroke(self):
         self.stroke_manager_3d.undo()
         self.stroke_manager_2d.undo()

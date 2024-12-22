@@ -79,9 +79,7 @@ class DrawingTool(BaseTool):
 
 
             if event.buttons() & Qt.MidButton:
-                canvas_widget.camera_distance -= dy * 0.01
-                if canvas_widget.camera_distance < 0.1:
-                    canvas_widget.camera_distance = 0.1
+                self.pan_camera(canvas_widget,dx,dy)
                 canvas_widget.update()
 
             self.last_mouse_pos = event.pos()
@@ -111,7 +109,71 @@ class DrawingTool(BaseTool):
         elif (event.button() == Qt.RightButton or event.button() == Qt.MidButton) and self.is_viewing:
           self.is_viewing = False
 
+    def wheelEvent(self, event,
+                         canvas_widget):
+        delta = event.angleDelta().y()
+
+        # 定义缩放速度（可根据需要调整）
+        zoom_speed = 0.1
+
+        # 根据滚动方向调整摄像机距离
+        if delta > 0:
+            # 向前滚动，缩小距离（放大视图）
+            canvas_widget.camera_distance -= zoom_speed
+        else:
+            # 向后滚动，增大距离（缩小视图）
+            canvas_widget.camera_distance += zoom_speed
+        canvas_widget.camera_distance = max(10.0, min(canvas_widget.camera_distance, 40.0))
+        canvas_widget.update()
 
     def render_tool_icon(self, render, viewport_size):
         pass
 
+
+    def pan_camera(self,canvas_widget,dx, dy):
+        """
+        根据鼠标移动增量 dx, dy 平移摄像机的 look_at 位置。
+        """
+        # 将摄像机旋转角度从度转换为弧度
+        camera_rot = canvas_widget.camera_rot
+        yaw_rad = np.radians(
+            camera_rot[0])
+        pitch_rad = np.radians(
+            camera_rot[1])
+
+        # 计算前向向量（Forward Vector）
+        forward = np.array([
+            np.cos(pitch_rad) * np.sin(
+                yaw_rad),
+            np.sin(pitch_rad),
+            np.cos(pitch_rad) * np.cos(
+                yaw_rad)
+        ])
+        forward /= np.linalg.norm(
+            forward)
+
+        # 定义世界上向量（通常为 y 轴）
+        world_up = np.array(
+            [0.0, 1.0, 0.0])
+
+        # 计算右向量（Right Vector）
+        right = np.cross(forward,
+                         world_up)
+        right /= np.linalg.norm(right)
+
+        # 计算真实的上向量（Up Vector）
+        up = np.cross(right, forward)
+        up /= np.linalg.norm(up)
+
+        # 计算摄像机与 look_at 的距离，用于缩放平移速度
+        camera_distance = canvas_widget.camera_distance
+
+        # 定义平移速度（根据距离和鼠标移动增量）
+        pan_speed = 0.002 * camera_distance  # 可根据需要调整
+
+        # 计算平移向量
+        pan_right = right * dx * pan_speed
+        pan_up = up * dy * pan_speed
+
+        # 更新 look_at 位置
+        canvas_widget.look_at += pan_right + pan_up

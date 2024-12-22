@@ -25,7 +25,7 @@ class Renderer3D:
                               camera_rot,
                               camera_dist,
                               viewport_size,
-                              ground_plane,
+                              lookat,
                               activated_tool=None):
         """
         渲染所有笔画，并根据选择状态设置颜色。同时批量维护每个笔画的屏幕坐标。
@@ -39,8 +39,9 @@ class Renderer3D:
         eye = polar_to_cartesian(
             camera_dist, camera_rot[0],
             camera_rot[1])
+        eye = eye + lookat
         center = np.array(
-            [0.0, 0.0, 0.0],
+            lookat,
             dtype=np.float32)
         up = np.array([0.0, 1.0, 0.0],
                       dtype=np.float32)
@@ -229,8 +230,8 @@ class Renderer3D:
 
     def distance_to_rgb(self,distance,
                         min_distance=0.0,
-                        max_distance=5.0,
-                        colormap='seismic'):
+                        max_distance=25.0,
+                        colormap='viridis'):
         """
         Convert a distance value to an RGB color based on a colormap.
 
