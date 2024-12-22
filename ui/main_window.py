@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("3D Drawing App with Overlay & Preprocessing")
-        self.resize(800, 600)
+        self.resize(1280, 800)
 
         self.stroke_filemanager = None
         self.canvas_widget = CanvasWidget(self)

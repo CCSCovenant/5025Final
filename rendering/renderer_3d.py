@@ -230,7 +230,7 @@ class Renderer3D:
 
     def distance_to_rgb(self,distance,
                         min_distance=0.0,
-                        max_distance=25.0,
+                        max_distance=50.0,
                         colormap='viridis'):
         """
         Convert a distance value to an RGB color based on a colormap.
