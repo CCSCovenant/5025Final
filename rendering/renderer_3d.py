@@ -2,11 +2,13 @@
 
 import OpenGL.GL as gl
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Renderer3D:
     def __init__(self):
         self.projection_matrix = np.eye(4, dtype=np.float32)
         self.view_matrix = np.eye(4, dtype=np.float32)
+        self.use_depth_color = True
 
     def initialize(self):
         gl.glClearColor(0.1,0.1,0.1,1.0)
@@ -118,28 +120,73 @@ class Renderer3D:
 
             # 遍历所有笔画，设置颜色并绘制
             for stroke in strokes_3d:
-                # 根据状态设置颜色
-                if stroke.is_selected:
-                    r, g, b = (1.0, 1.0,
-                               0.0)  # 选中：黄色
-                elif stroke.is_hovered:
-                    r, g, b = (0.0, 1.0,
-                               0.0)  # 悬停：绿色
+                # 如果未启用深度映射，就用 stroke 原有的选中/悬停/默认颜色
+                if not self.use_depth_color:
+                    if stroke.is_selected:
+                        r, g, b = (
+                        1.0, 1.0,
+                        0.0)  # 选中：黄色
+                    elif stroke.is_hovered:
+                        r, g, b = (
+                        0.0, 1.0,
+                        0.0)  # 悬停：绿色
+                    else:
+                        r, g, b = stroke.color  # 普通：自定义
+
+                    gl.glColor3f(r, g,
+                                 b)
+                    gl.glLoadMatrixf(
+                        mvp.T)
+
+                    if len(stroke.coords_3d) > 0:
+                        gl.glBegin(
+                            gl.GL_LINE_STRIP)
+                        for p in stroke.coords_3d:
+                            gl.glVertex3f(
+                                p[0],
+                                p[1],
+                                p[2])
+                        gl.glEnd()
+
                 else:
-                    r, g, b = stroke.color  # 普通：白色或自定义颜色
+                    # 如果开启深度映射，每个顶点根据与 eye 的距离计算颜色 (R,0,B)
 
-                gl.glColor3f(r, g, b)
-                gl.glLoadMatrixf(mvp.T)
 
-                # 批量绘制
-                if len(stroke.coords_3d) > 0:
-                    gl.glBegin(
-                        gl.GL_LINE_STRIP)
-                    for p in stroke.coords_3d:
-                        gl.glVertex3f(
-                            p[0], p[1],
-                            p[2])
-                    gl.glEnd()
+                    gl.glLoadMatrixf(
+                        mvp.T)
+                    if len(stroke.coords_3d) > 0:
+                        gl.glBegin(
+                            gl.GL_LINE_STRIP)
+                        for p in stroke.coords_3d:
+                            dist = np.linalg.norm(
+                                p - eye)
+                            # 使用一个简易函数：蓝色分量在近处~1，随 dist 增加衰减
+                            # (可调节 0.2, 0.3 等让近处变化更明显)
+                            rgb = self.distance_to_rgb(dist)
+
+                            if stroke.is_selected:
+                                r, g, b = (
+                                    1.0,
+                                    1.0,
+                                    0.0)  # 选中：黄色
+                            elif stroke.is_hovered:
+                                r, g, b = (
+                                    0.0,
+                                    1.0,
+                                    0.0)  # 悬停：绿色
+                            else:
+                                r, g, b = (
+                                    rgb[0],rgb[1],rgb[2]
+                                )
+                            gl.glColor3f(
+                                r,
+                                g,
+                                b)
+                            gl.glVertex3f(
+                                p[0],
+                                p[1],
+                                p[2])
+                        gl.glEnd()
 
             # 绘制选择圆（如果有）
         if activated_tool is not None:
@@ -180,6 +227,37 @@ class Renderer3D:
 
             gl.glMatrixMode(gl.GL_MODELVIEW)
 
+    def distance_to_rgb(self,distance,
+                        min_distance=0.0,
+                        max_distance=5.0,
+                        colormap='seismic'):
+        """
+        Convert a distance value to an RGB color based on a colormap.
+
+        Parameters:
+            distance (float): The input distance value.
+            min_distance (float): The minimum distance value, mapped to the start of the colormap.
+            max_distance (float): The maximum distance value, mapped to the end of the colormap.
+            colormap (str): The name of the Matplotlib colormap to use.
+
+        Returns:
+            tuple: A tuple of (R, G, B) values, each in the range [0, 1].
+        """
+        # Normalize the distance value to [0, 1]
+        norm_distance = (
+                                    distance - min_distance) / (
+                                    max_distance - min_distance)
+        norm_distance = np.clip(
+            norm_distance, 0.0,
+            1.0)  # Ensure within [0, 1]
+
+        # Get the colormap
+        cmap = plt.get_cmap(colormap)
+
+        # Convert normalized distance to an RGB color
+        rgba = cmap(norm_distance)
+        return rgba[
+               :3]  # Exclude the alpha channel
 
     def project_to_screen_batch(self,
                                 strokes_3d,

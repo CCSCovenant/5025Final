@@ -181,7 +181,6 @@ class Axis2Dto3DModifier(BaseModifier):
                     inter_pt, s3d,
                     canvas_widget)
                 chosen_anchor_3d = anchor_3d
-                chosen_inter_pt = inter_pt
                 break
 
         # step2: 如果有 anchor_3d, 则对线段两端做 "反投影 + 轴对齐"

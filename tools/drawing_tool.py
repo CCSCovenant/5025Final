@@ -33,8 +33,6 @@ class DrawingTool(BaseTool):
 
     def new_stroke_id(self):
         self.global_stroke_id = self.global_stroke_id + 1
-        print("increased")
-        print(self.global_stroke_id)
         return self.global_stroke_id
     def mouse_press(self, event, canvas_widget):
         if event.button() == Qt.LeftButton:

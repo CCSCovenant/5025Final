@@ -48,6 +48,7 @@ class CanvasWidget(QOpenGLWidget):
         self.current_tool = None
         self.temp_stroke_2d = None
 
+
         # Camera params
         self.camera_rot = [0.0, 0.0]
         self.camera_distance = 3.0
