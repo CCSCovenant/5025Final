@@ -3,6 +3,9 @@
 from PyQt5.QtWidgets import \
     QOpenGLWidget
 from PyQt5.QtCore import Qt, QPoint
+
+from data.file_manager import \
+    StrokeFileManager
 from data.stroke_manager_2d import \
     StrokeManager2D
 from data.stroke_manager_3d import \
@@ -43,6 +46,8 @@ class CanvasWidget(QOpenGLWidget):
         self.viewable2d_stroke = []
 
         self.selection_manager = SelectionManager()
+        self.stroke_filemanager = StrokeFileManager(self.stroke_manager_2d,self.stroke_manager_3d)
+        parent.stroke_filemanager = self.stroke_filemanager
         self.renderer = Renderer3D()
 
         self.setMouseTracking(True)
@@ -51,7 +56,7 @@ class CanvasWidget(QOpenGLWidget):
 
 
         # Camera params
-        self.camera_rot = [45.0, 45.0]
+        self.camera_rot = [45, 15]
         self.camera_distance = 3.0
 
         # 创建VanishingPointManager

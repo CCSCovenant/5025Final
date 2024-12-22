@@ -6,6 +6,8 @@ from PyQt5.QtWidgets import QMainWindow, \
     QMenu, QMenuBar, QHBoxLayout, \
     QButtonGroup, QRadioButton,QProgressBar
 
+from data.file_manager import \
+    StrokeFileManager
 from logic.Modifier.axis_2dto3d_modifier import \
     Axis2Dto3DModifier
 from logic.Modifier.smoothing_2d_modifier import \
@@ -37,6 +39,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("3D Drawing App with Overlay & Preprocessing")
         self.resize(800, 600)
 
+        self.stroke_filemanager = None
         self.canvas_widget = CanvasWidget(self)
         central_widget = QWidget()
         layout = QVBoxLayout()
@@ -231,26 +234,16 @@ class MainWindow(QMainWindow):
     def on_save_strokes(self):
         filepath, _ = QFileDialog.getSaveFileName(self, "Save Strokes", "", "JSON Files (*.json)")
         if filepath:
-            cam_rot = self.canvas_widget.camera_rot
-            cam_dist = self.canvas_widget.camera_distance
-            # 假设file_manager已在原代码中
             self.canvas_widget.stroke_manager_2d.undo_stack.clear() # 清空以免未同步
             self.canvas_widget.stroke_manager_3d.undo_stack.clear()
-            # 使用原先的file_manager逻辑
-            # 请根据原工程中file_manager的实现进行调用，如：
-            # self.file_manager.save_strokes(filepath, cam_rot, cam_dist)
+            self.stroke_filemanager.save_strokes(filepath)
             pass
 
     def on_load_strokes(self):
         filepath, _ = QFileDialog.getOpenFileName(self, "Load Strokes", "", "JSON Files (*.json)")
         if filepath:
-            # 根据原先file_manager的实现加载并重设camera和strokes
-            # cam_rot, cam_dist = self.file_manager.load_strokes(filepath)
-            # if cam_rot is not None:
-            #    self.canvas_widget.camera_rot = list(cam_rot)
-            # if cam_dist is not None:
-            #    self.canvas_widget.camera_distance = cam_dist
-            # self.canvas_widget.update()
+            self.stroke_filemanager.load_strokes(filepath)
+            self.canvas_widget.update()
             pass
 
     def toggle_debounce(self, checked):

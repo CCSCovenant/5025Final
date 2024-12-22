@@ -8,16 +8,11 @@ class StrokeFileManager:
         self.stroke_manager_2d = stroke_manager_2d
         self.stroke_manager_3d = stroke_manager_3d
 
-    def save_strokes(self, filepath, camera_rot, camera_dist):
+    def save_strokes(self, filepath):
         """
         将当前的camera信息 + 2D和3D笔画保存到JSON文件
         """
         data = {}
-        data["camera"] = {
-            "rot_x": camera_rot[0],
-            "rot_y": camera_rot[1],
-            "distance": camera_dist
-        }
 
         # 保存2D
         strokes_2d_data = []
@@ -25,8 +20,6 @@ class StrokeFileManager:
             stroke_dict = {
                 "stroke_id": stroke2d.stroke_id,
                 "points_2d": stroke2d.points_2d,
-                "camera_rot": list(stroke2d.camera_rot) if hasattr(stroke2d,"camera_rot") else [0.0,0.0],
-                "camera_dist": stroke2d.camera_dist if hasattr(stroke2d,"camera_dist") else 3.0
             }
             strokes_2d_data.append(stroke_dict)
         data["strokes_2d"] = strokes_2d_data
@@ -62,9 +55,6 @@ class StrokeFileManager:
         self.stroke_manager_2d.strokes_2d.clear()
         self.stroke_manager_3d.strokes_3d.clear()
 
-        camera_data = data.get("camera", {})
-        camera_rot = (camera_data.get("rot_x",0.0), camera_data.get("rot_y",0.0))
-        camera_dist = camera_data.get("distance", 3.0)
 
         # 加载2D
         strokes_2d_data = data.get("strokes_2d", [])
@@ -73,10 +63,6 @@ class StrokeFileManager:
             stroke_id = s2d_dict["stroke_id"]
             points_2d = s2d_dict["points_2d"]
             st = Stroke2D(stroke_id, points_2d)
-
-            # 如果需要恢复当时的camera信息到笔画，可做：
-            st.camera_rot = tuple(s2d_dict.get("camera_rot",(0.0,0.0)))
-            st.camera_dist = s2d_dict.get("camera_dist", 3.0)
 
             self.stroke_manager_2d.add_stroke(st)
 
@@ -92,4 +78,3 @@ class StrokeFileManager:
             self.stroke_manager_3d.add_stroke(st3d)
 
         print(f"Strokes loaded from {filepath}.")
-        return camera_rot, camera_dist
