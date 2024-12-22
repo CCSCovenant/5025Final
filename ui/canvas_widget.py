@@ -50,7 +50,7 @@ class CanvasWidget(QOpenGLWidget):
 
 
         # Camera params
-        self.camera_rot = [0.0, 0.0]
+        self.camera_rot = [45.0, 45.0]
         self.camera_distance = 3.0
 
         # 创建VanishingPointManager

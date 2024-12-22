@@ -27,6 +27,16 @@ class SelectionTool(BaseTool):
             canvas_widget.update()
         self.mouse_pos = (event.x(),event.y())
 
+    def mouse_press(self, event, canvas_widget):
+        if event.button() == Qt.RightButton:
+            # 获取当前 hovered_strokes
+            selected = self.selection_manager.selected_strokes
+
+            for s in selected:
+                canvas_widget.stroke_manager_3d.remove_stroke(s.stroke_id)
+            canvas_widget.update()
+        self.mouse_pos = (event.x(),event.y())
+
     def mouse_move(self, event, canvas_widget):
         # 实时更新 hovered_strokes
         self.mouse_pos = (event.x(), event.y())

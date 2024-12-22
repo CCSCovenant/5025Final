@@ -160,38 +160,73 @@ class Axis2Dto3DModifier(BaseModifier):
 
         # step1: 查找相交
         existing_3d_strokes = canvas_widget.stroke_manager_3d.get_all_strokes()
-        chosen_anchor_3d = None
-        chosen_intersect_2d = None
+
+        intersections = []  # 存储 (dist, inter_pt, stroke3d)
+
         for s3d in existing_3d_strokes:
+            if len(s3d.coords_3d) < 2:
+                continue
+
+            e = 1e-2
+            s3d_p0 = np.array(s3d.coords_3d[0],
+                             dtype=float)
+            s3d_p1= np.array(s3d.coords_3d[-1], dtype=float)
+
+            direction = s3d_p1 - s3d_p0
+            unit_direction = direction / np.linalg.norm(
+                direction)
+
+            # Extend the line
+            new_p1 = s3d_p0 - e * unit_direction
+            new_p2 = s3d_p1 + e * unit_direction
+
+
+            extends3d = Stroke3D([new_p1,new_p2])
             line2d = self.project_3d_line_to_2d(
-                s3d, canvas_widget)
+                extends3d, canvas_widget)
             if len(line2d) < 2:
                 continue
-            # 取 line2d首尾
+            # 这里只取首尾
             L0_2d = np.array(line2d[0],
                              dtype=float)
             L1_2d = np.array(line2d[-1],
                              dtype=float)
+
             inter_pt = self.intersect_2d_lines(
                 p0_2d, p1_2d, L0_2d,
                 L1_2d)
             if inter_pt is not None:
-                # 计算 3D交点: 这里演示 "只取离 inter_pt 更近的端点当作 anchor_3d"
-                anchor_3d = self.unproject_2d_point_onto_3d_line(
-                    inter_pt, s3d,
-                    canvas_widget)
-                chosen_anchor_3d = anchor_3d
-                break
-
+                # 计算 inter_pt 到 p0_2d 的距离
+                dist_to_p0 = np.linalg.norm(
+                    inter_pt - p0_2d)
+                intersections.append((
+                                     dist_to_p0,
+                                     inter_pt,
+                                     s3d))
         # step2: 如果有 anchor_3d, 则对线段两端做 "反投影 + 轴对齐"
-        if chosen_anchor_3d is not None:
+        if len(intersections) > 0:
+            # 选距离 p0_2d 最小的
+            intersections.sort(
+                key=lambda x: x[
+                    0])  # dist ascending
+            chosen_inter_pt = \
+            intersections[0][1]  # 2D相交点
+            chosen_s3d = \
+            intersections[0][2]  # 对应线段
+
+            # 将 chosen_inter_pt 反投影到 chosen_s3d
+            anchor_3d = self.unproject_2d_point_onto_3d_line(
+                chosen_inter_pt,
+                chosen_s3d,
+                canvas_widget)
+
             p0_3d = self.reproject_axis_line_2dpt_to_3d(
                 p0_2d, axis,
-                chosen_anchor_3d,
+                anchor_3d,
                 canvas_widget)
             p1_3d = self.reproject_axis_line_2dpt_to_3d(
                 p1_2d, axis,
-                chosen_anchor_3d,
+                anchor_3d,
                 canvas_widget)
         else:
             # step3: 无相交 -> 线段首点落地, 整条线对齐 axis
