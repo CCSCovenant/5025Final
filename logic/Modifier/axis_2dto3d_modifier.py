@@ -35,27 +35,22 @@ class Axis2Dto3DModifier(BaseModifier):
     # -----------------------------
     def apply_2d(self, stroke2d,
                  canvas_widget):
-        print("processing")
         pts = stroke2d.points_2d
         if len(pts) < 2:
             return stroke2d  # 无法构成线
 
         p0 = np.array(pts[0],
                       dtype=float)
-        p1 = np.array(pts[1],
+        p1 = np.array(pts[-1],
                       dtype=float)
         init_dir = p1 - p0
         if np.linalg.norm(
                 init_dir) < 1e-9:
             return stroke2d
 
-            # 我们在世界坐标中取 +X, -X, +Y, -Y, +Z, -Z 的"无穷远"点
         axis_candidates = ["x",
-                           "x",
                            "y",
-                           "y",
-                           "z",
-                           "z"]
+                           "z",]
         vanish_pts = {}
         for axis_name in axis_candidates:
             vanish_pts[
@@ -74,9 +69,16 @@ class Axis2Dto3DModifier(BaseModifier):
         # 选出与 init_dir 夹角最小者
         best_axis = None
         best_cos = -1
+        print(str(cand_dirs))
+
         for aname, avec in cand_dirs.items():
             c = self.cosine_similarity(
                 init_dir, avec)
+            if c > best_cos:
+                best_cos = c
+                best_axis = aname
+            c = self.cosine_similarity(
+                init_dir, -avec)
             if c > best_cos:
                 best_cos = c
                 best_axis = aname
