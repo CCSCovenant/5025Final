@@ -102,7 +102,8 @@ class MainWindow(QMainWindow):
         self.stroke_processor.register_modifier(m_axis_2d_to_3d)
 
         self.stroke_processor.pipelineList_2d = [
-            "smooth_2d"
+            "smooth_2d",
+            "axis_2d_to_3d"
         ]
         self.stroke_processor.pipelineList_2d_to_3d =[
             "axis_2d_to_3d"

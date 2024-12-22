@@ -12,7 +12,9 @@ class Smoothing2DModifier(BaseModifier):
         super().__init__(mod_id="smooth_2d",
                          enable_toggle_list=["debounce"])
 
-    def apply_2d(self, stroke2d):
+    def apply_2d(self, stroke2d,canvas_widget):
+        print("processing")
+
         points = stroke2d.points_2d
         if len(points) < 3:
             return stroke2d

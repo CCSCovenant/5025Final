@@ -122,7 +122,7 @@ class CanvasWidget(QOpenGLWidget):
     def render3d_strokes(self):
         strokes_3d = list(
             self.stroke_manager_3d.get_all_strokes())
-        print(len(strokes_3d))
+
         self.renderer.render(
             strokes_3d,
             camera_rot=self.camera_rot,

@@ -47,7 +47,7 @@ class DrawingTool(BaseTool):
             self.current_points_2d.append((event.x(), event.y()))
             self.temp_stroke_2d.points_2d = self.current_points_2d
 
-            processed_temp_stroke_2d = self.stroke_processor.process_2d_stroke(self.temp_stroke_2d)
+            processed_temp_stroke_2d = self.stroke_processor.process_2d_stroke(self.temp_stroke_2d,canvas_widget)
             # 实时转换可省去预处理（实时显示原始轨迹），预处理只在最终确定时进行
             # 这里用原始点直接显示临时3D曲线(非必要)
 
@@ -59,7 +59,7 @@ class DrawingTool(BaseTool):
         if event.button() == Qt.LeftButton and self.is_drawing:
             self.is_drawing = False
             # 在最终提交前，对2D点列进行预处理
-            processed_temp_stroke_2d = self.stroke_processor.process_2d_stroke(self.temp_stroke_2d)
+            processed_temp_stroke_2d = self.stroke_processor.process_2d_stroke(self.temp_stroke_2d,canvas_widget)
             processed_final_stroke_3d = self.stroke_processor.process_2dto3d_stroke(processed_temp_stroke_2d,canvas_widget)
             # 转换为3D笔画
             self.stroke_manager_2d.add_stroke(self.temp_stroke_2d)

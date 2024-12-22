@@ -42,7 +42,7 @@ class StrokeProcessor:
             modifier.mod_id] = modifier
 
     def process_2d_stroke(self,
-                          stroke2d):
+                          stroke2d,canvas_widget):
         """
         依照 pipelineList 的顺序，调用2D Modifiers
         """
@@ -57,7 +57,7 @@ class StrokeProcessor:
                 continue
             # 调用 apply_2d
             stroke2d = mod.apply_2d(
-                stroke2d)
+                stroke2d,canvas_widget)
         return stroke2d
 
     def process_2dto3d_stroke(self,

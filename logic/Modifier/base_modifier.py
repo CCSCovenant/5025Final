@@ -21,7 +21,7 @@ class BaseModifier:
                 return False
         return True
 
-    def apply_2d(self, stroke2d):
+    def apply_2d(self, stroke2d,canvas_widget):
         """
         对2D笔画的处理。默认不做任何处理。
         """
