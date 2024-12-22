@@ -69,7 +69,6 @@ class Axis2Dto3DModifier(BaseModifier):
         # 选出与 init_dir 夹角最小者
         best_axis = None
         best_cos = -1
-        print(str(cand_dirs))
 
         for aname, avec in cand_dirs.items():
             c = self.cosine_similarity(
@@ -150,7 +149,6 @@ class Axis2Dto3DModifier(BaseModifier):
         pts2d = stroke2d.points_2d
         if len(pts2d) < 2:
             return None
-
         # step0: 获取此线段是对齐到 x,y,z 中哪一条
         axis = stroke2d.meta.get('axis',
                                  'x')  # 默认x
@@ -162,10 +160,6 @@ class Axis2Dto3DModifier(BaseModifier):
 
         # step1: 查找相交
         existing_3d_strokes = canvas_widget.stroke_manager_3d.get_all_strokes()
-        existing_3d_strokes = sorted(
-            existing_3d_strokes,
-            key=lambda s: s.stroke_id)
-
         chosen_anchor_3d = None
         chosen_intersect_2d = None
         for s3d in existing_3d_strokes:
@@ -173,7 +167,7 @@ class Axis2Dto3DModifier(BaseModifier):
                 s3d, canvas_widget)
             if len(line2d) < 2:
                 continue
-            # 只示例: 取 line2d首尾
+            # 取 line2d首尾
             L0_2d = np.array(line2d[0],
                              dtype=float)
             L1_2d = np.array(line2d[-1],
@@ -221,7 +215,7 @@ class Axis2Dto3DModifier(BaseModifier):
             [p0_3d, p1_3d],
             dtype=np.float32)
         stroke3d = Stroke3D(coords_3d,
-                            stroke2d.stroke_id)
+                            stroke_id=stroke2d.stroke_id)
         return stroke3d
 
     # =================================================================

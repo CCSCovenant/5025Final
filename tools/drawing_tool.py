@@ -23,17 +23,24 @@ class DrawingTool(BaseTool):
         self.stroke_processor = stroke_processor
         self.feature_toggle_manager = feature_toggle_manager
 
+        self.global_stroke_id = 0
+
 
         self.is_drawing = False
         self.current_points_2d = []
         self.current_stroke_id = None
         self.temp_stroke_2d = None
 
+    def new_stroke_id(self):
+        self.global_stroke_id = self.global_stroke_id + 1
+        print("increased")
+        print(self.global_stroke_id)
+        return self.global_stroke_id
     def mouse_press(self, event, canvas_widget):
         if event.button() == Qt.LeftButton:
             self.is_drawing = True
             self.current_points_2d = [(event.x(), event.y())]
-            self.current_stroke_id = str(uuid.uuid4())
+            self.current_stroke_id = self.new_stroke_id()
             self.temp_stroke_2d = Stroke2D(
                 stroke_id=self.current_stroke_id,
                 points_2d=self.current_points_2d
@@ -63,8 +70,6 @@ class DrawingTool(BaseTool):
             processed_final_stroke_3d = self.stroke_processor.process_2dto3d_stroke(processed_temp_stroke_2d,canvas_widget)
             # 转换为3D笔画
             self.stroke_manager_2d.add_stroke(self.temp_stroke_2d)
-
-
             if self.feature_toggle_manager.is_enabled("adv_sbm"):
                 canvas_widget.viewable2d_stroke.append(processed_temp_stroke_2d)
             else:

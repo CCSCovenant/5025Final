@@ -47,7 +47,7 @@ class Renderer3D:
 
         # 计算 MVP 矩阵
         mvp = self.projection_matrix @ self.view_matrix  # (4,4)
-
+        '''
         if ground_plane is not None:
             model_mat = np.eye(4,
                                dtype=np.float32)  # ground plane model transform
@@ -55,7 +55,7 @@ class Renderer3D:
                 model_mat,
                 self.view_matrix,
                 self.projection_matrix)
-
+        '''
         # 批量投影所有笔画的 3D 坐标到 2D 屏幕坐标
         # 首先收集所有坐标
         if len(strokes_3d) > 0:
