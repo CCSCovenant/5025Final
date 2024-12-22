@@ -10,8 +10,8 @@ from logic.Modifier.axis_2dto3d_modifier import \
     Axis2Dto3DModifier
 from logic.Modifier.smoothing_2d_modifier import \
     Smoothing2DModifier
-from logic.pysbm_worker import \
-    pySBMWorker
+
+#from logic.pysbm_worker import pySBMWorker
 from .canvas_widget import CanvasWidget
 
 from tools.drawing_tool import DrawingTool
@@ -257,6 +257,7 @@ class MainWindow(QMainWindow):
         self.canvas_widget.vanishing_point_manager.save_config()
         self.canvas_widget.update()
 
+    '''
     def on_adv_sbm_toggled(self,
                            checked):
         # set feature
@@ -367,6 +368,7 @@ class MainWindow(QMainWindow):
         # 线程结束后，可以把 worker 置为 None
         self.worker = None
 
+    '''
     def disable_gui(self):
         """
         禁用整个GUI，阻止用户输入（鼠标、键盘等）

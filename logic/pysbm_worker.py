@@ -1,6 +1,6 @@
 # coding=utf-8
 # logic/pysbm_worker.py
-
+'''
 import time
 
 import pysbm
@@ -87,3 +87,4 @@ class pySBMWorker(QThread):
         # 处理完成
         # 把最终的模型或结果返回给主线程
         self.finished.emit(results)
+'''

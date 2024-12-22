@@ -177,19 +177,11 @@ class Axis2Dto3DModifier(BaseModifier):
                 L1_2d)
             if inter_pt is not None:
                 # 计算 3D交点: 这里演示 "只取离 inter_pt 更近的端点当作 anchor_3d"
-                dist0 = np.linalg.norm(
-                    inter_pt - L0_2d)
-                dist1 = np.linalg.norm(
-                    inter_pt - L1_2d)
-                if dist0 < dist1:
-                    anchor_3d = \
-                    s3d.coords_3d[0]
-                else:
-                    anchor_3d = \
-                    s3d.coords_3d[-1]
-
+                anchor_3d = self.unproject_2d_point_onto_3d_line(
+                    inter_pt, s3d,
+                    canvas_widget)
                 chosen_anchor_3d = anchor_3d
-                chosen_intersect_2d = inter_pt
+                chosen_inter_pt = inter_pt
                 break
 
         # step2: 如果有 anchor_3d, 则对线段两端做 "反投影 + 轴对齐"
@@ -469,6 +461,94 @@ class Axis2Dto3DModifier(BaseModifier):
             pt_world[0] = ax3d[0]
             pt_world[1] = ax3d[1]
             return tuple(pt_world)
+
+    def unproject_2d_point_onto_3d_line(
+            self, inter_pt, stroke3d,
+            canvas_widget):
+        """
+        假设 stroke3d.coords_3d = [L0_3d, L1_3d] 表示一条 3D 线段。
+        step:
+          1) 将 inter_pt => 一条射线(r_o, r_d)
+          2) 在 3D 中, 对 "线段 L(t)=L0 + t*(L1-L0)" 做射线-线段最近点 or param 解
+          3) 返回该 3D 坐标(就是 2D交点在 3D上对应的真实点)
+
+        示例: 仅展示"射线-线段"的最近点(最短距离)做近似.
+              也可做线-线相交(若那条线在无限延长).
+        """
+        # 1) 先构造 2D->3D 射线
+        r_o, r_d = self.build_ray_from_screen_pt(
+            inter_pt, canvas_widget)
+
+        # 2) 线段: P(t)= L0 + t*(L1-L0), t in [0,1]
+        L0_3d = stroke3d.coords_3d[0]
+        L1_3d = stroke3d.coords_3d[-1]
+        v_line = L1_3d - L0_3d  # 3D向量
+
+        # 3) 做 "射线-线段" 最近点(简化：线对线最近点)
+        #    param ray: r(t)=r_o + t*r_d
+        #    param line: L(u)=L0 + u*v_line
+        #    见: "线-线最短距离" 常见公式
+        #    这里只做示例, 并假定 r_d, v_line不平行
+        #    (若平行需处理退化情况).
+        A = np.dot(r_d, r_d)
+        B = np.dot(r_d, v_line)
+        C = np.dot(v_line, v_line)
+        w0 = r_o - L0_3d
+        D = np.dot(r_d, w0)
+        E = np.dot(v_line, w0)
+
+        denom = A * C - B * B
+        if abs(denom) < 1e-9:
+            # 退化, 平行或近似平行 => 取 L0_3d
+            return L0_3d
+
+        sc = (B * E - C * D) / denom
+        tc = (A * E - B * D) / denom
+
+        # sc => param for r,   tc => param for L
+        if tc < 0.0:
+            tc = 0.0
+        elif tc > 1.0:
+            tc = 1.0
+        # 这样保证落在线段范围内
+
+        # 4) 线段上的点: anchor_3d
+        anchor_3d = L0_3d + tc * v_line
+        return anchor_3d
+
+    def build_ray_from_screen_pt(self,
+                                 pt2d,
+                                 canvas_widget):
+        """
+        构建 "从相机出发" 的3D射线: r_o, r_d
+        """
+        renderer = canvas_widget.renderer
+        w, h = canvas_widget.width(), canvas_widget.height()
+        x_ndc = (pt2d[
+                     0] / w) * 2.0 - 1.0
+        y_ndc = 1.0 - (
+                    pt2d[1] / h) * 2.0
+        near_clip = np.array(
+            [x_ndc, y_ndc, -1, 1],
+            dtype=np.float32)
+        far_clip = np.array(
+            [x_ndc, y_ndc, 1, 1],
+            dtype=np.float32)
+
+        mvp = renderer.projection_matrix @ renderer.view_matrix
+        inv_mvp = np.linalg.inv(mvp)
+
+        p_near = inv_mvp @ near_clip
+        p_far = inv_mvp @ far_clip
+        if abs(p_near[3]) > 1e-9:
+            p_near /= p_near[3]
+        if abs(p_far[3]) > 1e-9:
+            p_far /= p_far[3]
+
+        r_o = p_near[:3]  # origin
+        r_d = p_far[
+              :3] - r_o  # direction
+        return r_o, r_d
 
     # =================================================================
     # 投影相关:  project_point_3d_to_2d / project_3d_line_to_2d
