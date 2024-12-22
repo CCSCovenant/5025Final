@@ -141,10 +141,11 @@ class MainWindow(QMainWindow):
         self.select_action = QAction("Selection Tool", self, checkable=True)
         self.toolbar.addAction(self.select_action)
         self.select_tool = SelectionTool(self.canvas_widget.selection_manager, radius=50)
-
+        '''
         self.view_action = QAction("View Tool", self, checkable=True)
         self.toolbar.addAction(self.view_action)
         self.view_tool = ViewTool()
+        '''
         '''
         self.adv_sbm_action = QAction(
             "Enable ADV_SBM", self,
@@ -173,7 +174,7 @@ class MainWindow(QMainWindow):
 
         self.draw_action.triggered.connect(self.on_tool_changed)
         self.select_action.triggered.connect(self.on_tool_changed)
-        self.view_action.triggered.connect(self.on_tool_changed)
+        #self.view_action.triggered.connect(self.on_tool_changed)
         self.radius_spin.valueChanged.connect(self.on_radius_changed)
         self.undo_action.triggered.connect(self.canvas_widget.undo_stroke)
         self.redo_action.triggered.connect(self.canvas_widget.redo_stroke)
@@ -204,12 +205,12 @@ class MainWindow(QMainWindow):
         self.assist_action = QAction("Enable Assist Lines", self, checkable=True)
         self.assist_action.setChecked(True)
         self.assist_action.triggered.connect(self.toggle_assist_lines)
-
+        '''
         self.toolbar2.addAction(
             self.debounce_action)
         self.toolbar2.addAction(
             self.assist_action)
-
+        '''
 
         self.worker = None  # 用于保存线程对象
 
