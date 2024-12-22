@@ -25,11 +25,14 @@ class DrawingTool(BaseTool):
 
         self.global_stroke_id = 0
 
-
         self.is_drawing = False
+        self.is_viewing = False
         self.current_points_2d = []
         self.current_stroke_id = None
         self.temp_stroke_2d = None
+
+        self.last_mouse_pos = None
+
 
     def new_stroke_id(self):
         self.global_stroke_id = self.global_stroke_id + 1
@@ -46,6 +49,9 @@ class DrawingTool(BaseTool):
             # 记录当下的camera信息
             self.temp_stroke_2d.camera_rot = tuple(canvas_widget.camera_rot)
             self.temp_stroke_2d.camera_dist = canvas_widget.camera_distance
+        elif event.button() == Qt.RightButton or event.button() == Qt.MidButton:
+            self.is_viewing = True
+            self.last_mouse_pos = event.pos()
 
     def mouse_move(self, event, canvas_widget):
         if self.is_drawing:
@@ -59,6 +65,26 @@ class DrawingTool(BaseTool):
             if processed_temp_stroke_2d:
                 canvas_widget.temp_stroke_2d = processed_temp_stroke_2d
             canvas_widget.update()
+        elif self.is_viewing:
+            dx = event.x() - self.last_mouse_pos.x()
+            dy = event.y() - self.last_mouse_pos.y()
+
+            # 简单的摄像机旋转操作
+            if event.buttons() & Qt.RightButton:
+                canvas_widget.camera_rot[
+                    0] += dx * 0.5
+                canvas_widget.camera_rot[
+                    1] += dy * 0.5
+                canvas_widget.update()
+
+
+            if event.buttons() & Qt.MidButton:
+                canvas_widget.camera_distance -= dy * 0.01
+                if canvas_widget.camera_distance < 0.1:
+                    canvas_widget.camera_distance = 0.1
+                canvas_widget.update()
+
+            self.last_mouse_pos = event.pos()
 
     def mouse_release(self, event, canvas_widget):
         if event.button() == Qt.LeftButton and self.is_drawing:
@@ -82,6 +108,8 @@ class DrawingTool(BaseTool):
             self.current_points_2d = []
             canvas_widget.temp_stroke_2d = None
             canvas_widget.update()
+        elif (event.button() == Qt.RightButton or event.button() == Qt.MidButton) and self.is_viewing:
+          self.is_viewing = False
 
 
     def render_tool_icon(self, render, viewport_size):

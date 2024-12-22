@@ -84,7 +84,6 @@ class StrokeProcessor:
                 stroke2d,
                 canvas_widget
             )
-            print(possible_3d.stroke_id)
             if possible_3d is not None:
                 stroke3d = possible_3d
                 break

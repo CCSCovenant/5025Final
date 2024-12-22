@@ -25,10 +25,7 @@ class SelectionTool(BaseTool):
                 # 覆盖式选择
                 self.selection_manager.set_selection(hovered)
             canvas_widget.update()
-        self.mouse_pos = (event.x(),event.y())
-
-    def mouse_press(self, event, canvas_widget):
-        if event.button() == Qt.RightButton:
+        elif event.button() == Qt.RightButton:
             # 获取当前 hovered_strokes
             selected = self.selection_manager.selected_strokes
 

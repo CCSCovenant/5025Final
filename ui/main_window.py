@@ -10,6 +10,8 @@ from logic.Modifier.axis_2dto3d_modifier import \
     Axis2Dto3DModifier
 from logic.Modifier.smoothing_2d_modifier import \
     Smoothing2DModifier
+from .AxisIndicatorWidget import \
+    AxisIndicatorWidget
 
 #from logic.pysbm_worker import pySBMWorker
 from .canvas_widget import CanvasWidget
@@ -42,7 +44,11 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(layout)
         self.setCentralWidget(central_widget)
 
+        self.axis_widget = AxisIndicatorWidget(self.canvas_widget)
+        self.canvas_widget.axis = self.axis_widget
+        layout.addWidget(self.axis_widget)
         # 添加参考模式选择的RadioButton
+        '''
         radio_layout = QHBoxLayout()
         self.radio_group = QButtonGroup(
             self)
@@ -81,14 +87,14 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(layout)
         self.setCentralWidget(
             central_widget)
-
+        
         # 根据当前manager模式设置默认选中按钮
         mode = self.canvas_widget.vanishing_point_manager.get_mode()
         btn = self.radio_group.button(
             mode)
         if btn:
             btn.setChecked(True)
-
+        '''
         # Feature Toggles
         self.feature_toggle_manager = FeatureToggleManager()
 
@@ -149,7 +155,7 @@ class MainWindow(QMainWindow):
         '''
         self.radius_spin = QSpinBox()
         self.radius_spin.setRange(1, 300)
-        self.radius_spin.setValue(50)
+        self.radius_spin.setValue(20)
         self.toolbar.addWidget(self.radius_spin)
 
         self.undo_action = QAction("Undo", self)

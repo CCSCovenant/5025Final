@@ -38,6 +38,7 @@ class CanvasWidget(QOpenGLWidget):
 
         self.stroke_manager_2d = StrokeManager2D()
         self.stroke_manager_3d = StrokeManager3D()
+        self.axis = None
 
         self.viewable2d_stroke = []
 
@@ -88,6 +89,9 @@ class CanvasWidget(QOpenGLWidget):
         self.overlay_manager.render((
                                     self.width(),
                                     self.height()))
+
+        if self.axis is not None:
+            self.axis.update()
 
     def render2d_strokes(self):
         # 这里可以用一个 2D Renderer, 或者简单地在正交投影下画 line strips:
