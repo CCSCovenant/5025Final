@@ -26,7 +26,7 @@ class Axis2Dto3DModifier(BaseModifier):
 
     def __init__(self,
                  mod_id="axis_2d_to_3d",
-                 enable_toggle_list=["always"]):
+                 enable_toggle_list=["axis_enabled"]):
         super().__init__(mod_id,
                          enable_toggle_list)
 

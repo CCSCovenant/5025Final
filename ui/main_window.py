@@ -10,6 +10,8 @@ from data.file_manager import \
     StrokeFileManager
 from logic.Modifier.axis_2dto3d_modifier import \
     Axis2Dto3DModifier
+from logic.Modifier.free_hand_line import \
+    FreeHandModifier
 from logic.Modifier.smoothing_2d_modifier import \
     Smoothing2DModifier
 from .AxisIndicatorWidget import \
@@ -106,16 +108,20 @@ class MainWindow(QMainWindow):
 
         m_smooth2d = Smoothing2DModifier()
         m_axis_2d_to_3d = Axis2Dto3DModifier()
+        free_hand_line =  FreeHandModifier()
 
         self.stroke_processor.register_modifier(m_smooth2d)
         self.stroke_processor.register_modifier(m_axis_2d_to_3d)
+        self.stroke_processor.register_modifier(free_hand_line)
 
         self.stroke_processor.pipelineList_2d = [
             "smooth_2d",
-            "axis_2d_to_3d"
+            "axis_2d_to_3d",
+            "free_hand_line"
         ]
         self.stroke_processor.pipelineList_2d_to_3d =[
-            "axis_2d_to_3d"
+            "axis_2d_to_3d",
+            "free_hand_line"
         ]
 
 
@@ -208,9 +214,10 @@ class MainWindow(QMainWindow):
         '''
         self.toolbar2.addAction(
             self.debounce_action)
+        '''
         self.toolbar2.addAction(
             self.assist_action)
-        '''
+
 
         self.worker = None  # 用于保存线程对象
 
@@ -219,15 +226,15 @@ class MainWindow(QMainWindow):
         sender = self.sender()
         self.draw_action.setChecked(False)
         self.select_action.setChecked(False)
-        self.view_action.setChecked(False)
+        #self.view_action.setChecked(False)
         sender.setChecked(True)
 
         if sender == self.draw_action:
             self.canvas_widget.set_tool(self.draw_tool)
         elif sender == self.select_action:
             self.canvas_widget.set_tool(self.select_tool)
-        elif sender == self.view_action:
-            self.canvas_widget.set_tool(self.view_tool)
+        #elif sender == self.view_action:
+        #    self.canvas_widget.set_tool(self.view_tool)
 
     def on_radius_changed(self, val):
         self.select_tool.set_radius(val)
@@ -251,7 +258,10 @@ class MainWindow(QMainWindow):
         self.feature_toggle_manager.set_feature("debounce", checked)
 
     def toggle_assist_lines(self, checked):
-        self.feature_toggle_manager.set_feature("assist_lines", checked)
+        self.feature_toggle_manager.set_feature("axis_enabled", checked)
+        self.feature_toggle_manager.set_feature("free_hand_line", not checked)
+
+
     def on_vp_mode_changed(self, mode):
         self.canvas_widget.vanishing_point_manager.set_mode(mode)
         self.canvas_widget.vanishing_point_manager.save_config()
